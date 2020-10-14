@@ -82,8 +82,23 @@ int obstacle::getXSize()
 	return xSize;
 }
 
+int obstacle::getYSize()
+{
+	return ySize;
+}
+
+int obstacle::getZSize()
+{
+	return zSize;
+}
+
 obstacle::~obstacle()
 {
+}
+
+Vector obstacle::getCenter()
+{
+	return this->center;
 }
 
 void obstacle::recalcCorners()
@@ -106,8 +121,8 @@ void obstacle::recalcFaces()
 	faces[1] = actualCenter + Vector(xSize / 2, 0, 0);
 	faces[2] = actualCenter + Vector(0, ySize / 2, 0);
 	faces[3] = actualCenter - Vector(xSize / 2, 0, 0);
-	faces[4] = actualCenter + Vector(0, 0, ySize);
-	faces[5] = actualCenter - Vector(0, 0, ySize);
+	faces[4] = actualCenter + Vector(0, 0, zSize/2);
+	faces[5] = actualCenter - Vector(0, 0, zSize/2);
 
 }
 

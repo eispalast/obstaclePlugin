@@ -11,17 +11,19 @@ BAKKESMOD_PLUGIN(obstaclePlugin, "Obstacle plugin", "0.1", PLUGINTYPE_FREEPLAY)
 void obstaclePlugin::onLoad()
 {
 	this->active = false;
-	cvarManager->registerCvar("obstacle_x_size", "1000", "The size in x dimension", false, false, 10.0f, true, 2000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_x_size, this, std::placeholders::_1, std::placeholders::_2));
-	cvarManager->registerCvar("obstacle_y_size", "1000", "The size in y dimension", false, false, 10.0f, true, 2000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_y_size, this, std::placeholders::_1, std::placeholders::_2));
+	cvarManager->registerCvar("obstacle_x_size", "1000", "The size in x dimension", false, false, 10.0f, true, 8000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_x_size, this, std::placeholders::_1, std::placeholders::_2));
+	cvarManager->registerCvar("obstacle_y_size", "1000", "The size in y dimension", false, false, 10.0f, true, 8000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_y_size, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_z_size", "1000", "The size in z dimension", false, false, 10.0f, true, 2000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_z_size, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_moving", "0", "Determines if the obstacle moves", true, true, 0.0f, true, 1.0f, true);
 	cvarManager->registerCvar("obstacle_x_speed", "0", "Determines the speed in x dimension", true, true, 0.0f, true, 10.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_x_speed, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_y_speed", "0", "Determines the speed in y dimension", true, true, 0.0f, true, 10.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_y_speed, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_z_speed", "0", "Determines the speed in z dimension", true, true, 0.0f, true, 10.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_z_speed, this, std::placeholders::_1, std::placeholders::_2));
-	cvarManager->registerCvar("obstacle_x_moving_distance", "0", "Determines how far the obstacle moves in x dimension", true, true, 0.0f, true, 1000.0f, true);
-	cvarManager->registerCvar("obstacle_y_moving_distance", "0", "Determines how far the obstacle moves in y dimension", true, true, 0.0f, true, 1000.0f, true);
-	cvarManager->registerCvar("obstacle_z_moving_distance", "0", "Determines how far the obstacle moves in z dimension", true, true, 0.0f, true, 1000.0f, true);
-	
+	cvarManager->registerCvar("obstacle_x_moving_distance", "0", "Determines how far the obstacle moves in x dimension", true, true, 0.0f, true, 1000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_x_distance, this, std::placeholders::_1, std::placeholders::_2));
+	cvarManager->registerCvar("obstacle_y_moving_distance", "0", "Determines how far the obstacle moves in y dimension", true, true, 0.0f, true, 1000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_y_distance, this, std::placeholders::_1, std::placeholders::_2));
+	cvarManager->registerCvar("obstacle_z_moving_distance", "0", "Determines how far the obstacle moves in z dimension", true, true, 0.0f, true, 1000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_z_distance, this, std::placeholders::_1, std::placeholders::_2));
+	cvarManager->registerCvar("obstacle_move_center", "", "Usage obstacle_move_center [dimension] [amount]",true,false,0.0f,false,0.0f,false).addOnValueChanged(std::bind(&obstaclePlugin::move_obstacle, this, std::placeholders::_1, std::placeholders::_2));
+
+
 	cvarManager->registerNotifier("obstacle_place", [&gw = this->gameWrapper, this](std::vector<std::string> commands) {
 		bool retflag;
 		spawnObstacle(retflag);
@@ -51,6 +53,8 @@ void obstaclePlugin::onLoad()
 
 	
 
+	
+
 
 }
 
@@ -65,10 +69,10 @@ void obstaclePlugin::spawnObstacle(bool& retflag)
 	}
 	Vector carPosition = car.GetLocation();
 	if (obsExists) {
-		Obstacle.setCenter(carPosition + Vector(0, 0, 500));
+		Obstacle.setCenter(carPosition + Vector(0, 0, cvarManager->getCvar("obstacle_z_size").getIntValue()/2));
 	}
 	else {
-		this->Obstacle = obstacle(carPosition + Vector(0, 0, 500), 1000, 1000, 1000);
+		this->Obstacle = obstacle(carPosition + Vector(0, 0, cvarManager->getCvar("obstacle_z_size").getIntValue() / 2), cvarManager->getCvar("obstacle_x_size").getIntValue(), cvarManager->getCvar("obstacle_y_size").getIntValue(), cvarManager->getCvar("obstacle_z_size").getIntValue());
 	}
 	obsExists = true;
 	retflag = false;
@@ -94,6 +98,7 @@ void obstaclePlugin::render(CanvasWrapper canvas)
 	auto rotation = cam.GetRotation();
 	Vector2 canvasSize = canvas.GetSize();
 	canvas.SetColor(255, 255, 255, 255);
+	
 	renderCorrectly(canvas, Obstacle.downLeftFront, Obstacle.downRightFront, location, rotation, canvasSize);
 	renderCorrectly(canvas, Obstacle.downLeftFront, Obstacle.upLeftFront, location, rotation, canvasSize);
 	renderCorrectly(canvas, Obstacle.downLeftFront, Obstacle.downLeftBack, location, rotation, canvasSize);
@@ -106,11 +111,13 @@ void obstaclePlugin::render(CanvasWrapper canvas)
 	renderCorrectly(canvas, Obstacle.downRightBack, Obstacle.downRightFront, location, rotation, canvasSize);
 	renderCorrectly(canvas, Obstacle.upLeftFront, Obstacle.upLeftBack, location, rotation, canvasSize);
 	renderCorrectly(canvas, Obstacle.upLeftBack, Obstacle.downLeftBack, location, rotation, canvasSize);
+	
 
 
 	
-
+	
 	/*
+	//Don't know which render mode is better. Both are a little wonky
 	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.downRightFront), 2);
 	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.downLeftBack));
 	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.upLeftFront));
@@ -133,20 +140,10 @@ void obstaclePlugin::checkCollision(std::string eventName)
 		gameWrapper->UnregisterDrawables();
 		gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
 	}
+
+	//apply the movement and check whether it reached its maximum movement. If so, flip the moving direction
 	if (cvarManager->getCvar("obstacle_moving").getBoolValue()) {
-		Vector result = Obstacle.addOffset(offsetAdder);
-		if (result.X > cvarManager->getCvar("obstacle_x_moving_distance").getIntValue() ||
-			result.X < -cvarManager->getCvar("obstacle_x_moving_distance").getIntValue()) {
-			offsetAdder.X *= -1;
-		}
-		if (result.Y > cvarManager->getCvar("obstacle_y_moving_distance").getIntValue() ||
-			result.Y < -cvarManager->getCvar("obstacle_y_moving_distance").getIntValue()) {
-			offsetAdder.Y *= -1;
-		}
-		if (result.Z > cvarManager->getCvar("obstacle_z_moving_distance").getIntValue() ||
-			result.Z < -cvarManager->getCvar("obstacle_z_moving_distance").getIntValue()) {
-			offsetAdder.Z *= -1;
-		}
+		applyMovement();
 	}
 	//get all information about the ball
 	ServerWrapper tutorial = gameWrapper->GetGameEventAsServer();
@@ -161,25 +158,74 @@ void obstaclePlugin::checkCollision(std::string eventName)
 		if (nearest_face == -1) { //error (no nearest face found)
 			return;
 		}
-		ball.SetLocation(prevBallPosition);
+		//ball.SetLocation(prevBallPosition);
 		if (nearest_face == 0 || nearest_face == 2) {
-			ball.SetVelocity(Vector(prevBallVel.X, -prevBallVel.Y, prevBallVel.Z));
+			if (cvarManager->getCvar("obstacle_moving").getBoolValue()&&offsetAdder.Y!=0) {
+				if (offsetAdder.Y * ball_vel.Y >= 0) {//they move in the same direction
+					if (abs(offsetAdder.Y*100) >= abs(prevBallPosition.Y)) {//wall is faster than ball
+						ball.SetVelocity(Vector(ball_vel.X, -ball_vel.Y + offsetAdder.Y * 240, ball_vel.Z));
+					}
+					else {//ball is faster than wall
+						ball.SetVelocity(ball_vel + Vector(0, -offsetAdder.Y * 100, 0));
+					}
+				}
+				else { //they move in different directions
+					ball.SetVelocity(Vector(ball_vel.X,-ball_vel.Y+offsetAdder.Y*120,ball_vel.Z));
+				}
+				
+			}
+			else {//no movement
+				ball.SetVelocity(Vector(ball_vel.X, -ball_vel.Y*5/6, ball_vel.Z));
+			}
+
 		}
 		else if (nearest_face == 1 || nearest_face == 3) {
-			ball.SetVelocity(Vector(-prevBallVel.X, prevBallVel.Y, prevBallVel.Z));
+			if (cvarManager->getCvar("obstacle_moving").getBoolValue()&&offsetAdder.X!=0) {
+				if (offsetAdder.X * ball_vel.X >= 0) {//they move in the same direction
+					if (abs(offsetAdder.X * 100) >= abs(prevBallPosition.X)) {//wall is faster than ball
+						ball.SetVelocity(Vector(-ball_vel.X + offsetAdder.X *240, ball_vel.Y, ball_vel.Z));
+					}
+					else {//ball is faster than wall
+						ball.SetVelocity(ball_vel + Vector(-offsetAdder.X * 100, 0,0));
+					}
+				}
+				else {//they move in different directions
+					ball.SetVelocity(Vector(-ball_vel.X+offsetAdder.X*120, ball_vel.Y, ball_vel.Z));
+				}
+			}
+			else {//no movement
+				ball.SetVelocity(Vector(-ball_vel.X, ball_vel.Y*5/6, ball_vel.Z));
+			}
 		}
-		else if (nearest_face == 4) {
-			ball.SetVelocity(Vector(prevBallVel.X, prevBallVel.Y, -prevBallVel.Z+650/120));
+		else if (nearest_face == 4) {//top
+			//TODO: movement 
+			ball.SetVelocity(Vector(prevBallVel.X, prevBallVel.Y, -(prevBallVel.Z)));
 		}
 		else {
 			ball.SetVelocity(Vector(prevBallVel.X, prevBallVel.Y, -prevBallVel.Z));
 		}
-
-
+		
 	}
 	prevBallPosition = ball_location;
 	prevBallVel = ball_vel;
 
+}
+
+void obstaclePlugin::applyMovement()
+{
+	//actually applying movement by changing the offset
+	Vector result = Obstacle.addOffset(offsetAdder);
+
+	//change movement direction when the maximum movement distance is reached
+	if (result.X > maxMovement.X || result.X < -maxMovement.X) {
+		offsetAdder.X *= -1;
+	}
+	if (result.Y > maxMovement.Y || result.Y < -maxMovement.Y) {
+		offsetAdder.Y *= -1;
+	}
+	if (result.Z > maxMovement.Z || result.Z < -maxMovement.Z) {
+		offsetAdder.Z *= -1;
+	}
 }
 
 inline float Dot(Rotator rot, Vector line)
@@ -209,13 +255,7 @@ void obstaclePlugin::renderCorrectly(CanvasWrapper canvas, Vector firstPoint, Ve
 		if (!(((secondPoint2.X < 0 || secondPoint2.X > canvasSize.X ) && (secondPoint2.Y < 0 || secondPoint2.Y >= canvasSize.Y )) || ((firstPoint2.X < 0 || firstPoint2.X >= canvasSize.X ) && (firstPoint2.Y < 0 || firstPoint2.Y >= canvasSize.Y ))))
 		{
 			canvas.DrawLine(firstPoint2, secondPoint2);
-			/*canvas.DrawLine(prevLine.minus({ 1,1 }), line.minus({ 1,1 })); //make lines thicker
-			cw.DrawLine(prevLine.minus({ -1,-1 }), line.minus({ -1,-1 }));
-			if (renderFrames) {
-				cw.SetColor(0, 0, 0, 255);
-				cw.SetPosition(line);
-				cw.DrawString(to_string(it->first));
-			}*/
+			
 		}
 	//}
 }
@@ -250,4 +290,54 @@ void obstaclePlugin::change_z_speed(std::string oldvalue, CVarWrapper cvar)
 	offsetAdder.Z = cvar.getIntValue();
 }
 
+
+void obstaclePlugin::change_x_distance(std::string oldvalue, CVarWrapper cvar)
+{
+	maxMovement.X = cvar.getIntValue();
+}
+
+void obstaclePlugin::change_y_distance(std::string oldvalue, CVarWrapper cvar)
+{
+	maxMovement.Y = cvar.getIntValue();
+}
+
+void obstaclePlugin::change_z_distance(std::string oldvalue, CVarWrapper cvar)
+{
+	maxMovement.Z = cvar.getIntValue();
+}
+
+void strip(std::string& input)
+{
+	for (int i = 0; i < input.size(); i++) {
+		if (input.at(i) != ' ') {
+			input = input.substr(i, input.size() - i);
+			break;
+		}
+	}
+	for (int i = input.size() - 1; i >= 0; i--) {
+		if (input.at(i) != ' ') {
+			input = input.substr(0, i + 1);
+			break;
+		}
+	}
+}
+
+void obstaclePlugin::move_obstacle(std::string oldvalue, CVarWrapper cvar)
+{
+	std::string input = cvar.getStringValue();
+	strip(input);
+	char dim = input.at(0);
+	std::string amount = input.substr(1, input.size() - 1);
+	strip(amount);
+	int am = std::stoi(amount);
+	if (dim == 'x') {
+		Obstacle.setCenter(Obstacle.getCenter() + Vector(am, 0, 0));
+	}
+	else if (dim == 'y') {
+		Obstacle.setCenter(Obstacle.getCenter() + Vector(0, am, 0));
+	}
+	else if (dim == 'z') {
+		Obstacle.setCenter(Obstacle.getCenter() + Vector(0, 0,am));
+	}
+}
 

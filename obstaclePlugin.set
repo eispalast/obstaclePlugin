@@ -1,17 +1,16 @@
 Obstacle plugin
-5|x size|obstacle_x_size|10|2000
-5|y size|obstacle_y_size|10|2000
+5|x size|obstacle_x_size|10|8000
+5|y size|obstacle_y_size|10|8000
 5|z size|obstacle_z_size|10|2000
-0|Move x+|obstacle_x_location_plus
+0|Move x+|obstacle_move_center "x 50"
 7
-0|Move x-|obstacle_x_location_minus
-0|Move y+|obstacle_y_location_plus
+0|Move x-|obstacle_move_center "x -50"
+0|Move y+|obstacle_move_center "y 50"
 7
-0|Move y-|obstacle_y_location_minus
-0|Move z+|obstacle_z_location_plus
+0|Move y-|obstacle_move_center "y -50"
+0|Move z+|obstacle_move_center "z 50"
 7
-0|Move z-|obstacle_z_location_minus
-0|deactivate|obstacle_deactivate
+0|Move z-|obstacle_move_center "z -50"
 8
 1|Moving|obstacle_moving
 10|obstacle_moving
@@ -22,4 +21,8 @@ Obstacle plugin
 5|y moving speed|obstacle_y_speed|0|10
 5|z moving speed|obstacle_z_speed|0|10
 11|
+8
 0|place obstacle here|obstacle_place
+7
+0|active|
+0|deactivate|obstacle_deactivate
