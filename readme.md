@@ -37,3 +37,23 @@ You are welcome to leave any (productive) feedback, questions, wishes, sorrows o
 
 ### A big thanks
 to Rocket Science for his detailed [video](https://www.youtube.com/watch?v=t-5SGaunD_s) on how to create a plugin!
+
+____
+### Changelog
+#### V1.0:
+__Fixed:__
+* Ball gets stuck in the wall at low speed
+
+__New:__
+* Added "bouncyness" slider. You can choose how hard to ball is hit back. (Don't set too low though)
+
+#### V0.1:
+**Known bugs**
+* Sometimes the ball is sucked into the obstacle, especially when the ball is rolling rather slow.
+* The obstacle isn't always fully visible, especially when you are quite near
+
+____
+### Plans for future releases
+* change line color and thickness
+* create more than 1 obstacle
+* save and load presets
