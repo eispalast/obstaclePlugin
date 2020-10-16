@@ -5,7 +5,7 @@
 #include "bakkesmod\wrappers\GameEvent\TutorialWrapper.h"
 #include "bakkesmod\wrappers\GameObject\CarWrapper.h"
 
-BAKKESMOD_PLUGIN(obstaclePlugin, "Obstacle plugin", "0.1", PLUGINTYPE_FREEPLAY)
+BAKKESMOD_PLUGIN(obstaclePlugin, "Obstacle plugin", "1.0", PLUGINTYPE_FREEPLAY)
 
 
 void obstaclePlugin::onLoad()
@@ -22,7 +22,7 @@ void obstaclePlugin::onLoad()
 	cvarManager->registerCvar("obstacle_y_moving_distance", "0", "Determines how far the obstacle moves in y dimension", true, true, 0.0f, true, 1000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_y_distance, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_z_moving_distance", "0", "Determines how far the obstacle moves in z dimension", true, true, 0.0f, true, 1000.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::change_z_distance, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->registerCvar("obstacle_move_center", "", "Usage obstacle_move_center [dimension] [amount]",true,false,0.0f,false,0.0f,false).addOnValueChanged(std::bind(&obstaclePlugin::move_obstacle, this, std::placeholders::_1, std::placeholders::_2));
-
+	cvarManager->registerCvar("obstacle_bouncyness", "1.0", "How hard will the ball get pushed back: 1: very hard, 0: not at all", true, true, 0.0f, true, 1.0f, true).addOnValueChanged(std::bind(&obstaclePlugin::k_changed, this, std::placeholders::_1, std::placeholders::_2));
 
 	cvarManager->registerNotifier("obstacle_place", [&gw = this->gameWrapper, this](std::vector<std::string> commands) {
 		bool retflag;
@@ -50,12 +50,6 @@ void obstaclePlugin::onLoad()
 		gameWrapper->RegisterDrawable(std::bind(&obstaclePlugin::render, this, std::placeholders::_1));
 		gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&obstaclePlugin::checkCollision, this, std::placeholders::_1));
 		}, "activates ", PERMISSION_FREEPLAY | PERMISSION_PAUSEMENU_CLOSED);
-
-	
-
-	
-
-
 }
 
 void obstaclePlugin::spawnObstacle(bool& retflag)
@@ -113,24 +107,6 @@ void obstaclePlugin::render(CanvasWrapper canvas)
 	renderCorrectly(canvas, Obstacle.upLeftBack, Obstacle.downLeftBack, location, rotation, canvasSize);
 	
 
-
-	
-	
-	/*
-	//Don't know which render mode is better. Both are a little wonky
-	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.downRightFront), 2);
-	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.downLeftBack));
-	canvas.DrawLine(canvas.Project(Obstacle.downLeftFront), canvas.Project(Obstacle.upLeftFront));
-	canvas.DrawLine(canvas.Project(Obstacle.upRightFront), canvas.Project(Obstacle.upLeftFront));
-	canvas.DrawLine(canvas.Project(Obstacle.upRightFront), canvas.Project(Obstacle.downRightFront));
-	canvas.DrawLine(canvas.Project(Obstacle.upRightFront), canvas.Project(Obstacle.upRightBack));
-	canvas.DrawLine(canvas.Project(Obstacle.upRightBack), canvas.Project(Obstacle.upLeftBack));
-	canvas.DrawLine(canvas.Project(Obstacle.upRightBack), canvas.Project(Obstacle.downRightBack));
-	canvas.DrawLine(canvas.Project(Obstacle.downRightBack), canvas.Project(Obstacle.downLeftBack));
-	canvas.DrawLine(canvas.Project(Obstacle.downRightBack), canvas.Project(Obstacle.downRightFront));
-	canvas.DrawLine(canvas.Project(Obstacle.upLeftFront), canvas.Project(Obstacle.upLeftBack));
-	canvas.DrawLine(canvas.Project(Obstacle.upLeftBack), canvas.Project(Obstacle.downLeftBack));
-	*/
 }
 
 void obstaclePlugin::checkCollision(std::string eventName)
@@ -158,52 +134,34 @@ void obstaclePlugin::checkCollision(std::string eventName)
 		if (nearest_face == -1) { //error (no nearest face found)
 			return;
 		}
-		//ball.SetLocation(prevBallPosition);
+		
+		
 		if (nearest_face == 0 || nearest_face == 2) {
-			if (cvarManager->getCvar("obstacle_moving").getBoolValue()&&offsetAdder.Y!=0) {
-				if (offsetAdder.Y * ball_vel.Y >= 0) {//they move in the same direction
-					if (abs(offsetAdder.Y*100) >= abs(prevBallPosition.Y)) {//wall is faster than ball
-						ball.SetVelocity(Vector(ball_vel.X, -ball_vel.Y + offsetAdder.Y * 240, ball_vel.Z));
-					}
-					else {//ball is faster than wall
-						ball.SetVelocity(ball_vel + Vector(0, -offsetAdder.Y * 100, 0));
-					}
-				}
-				else { //they move in different directions
-					ball.SetVelocity(Vector(ball_vel.X,-ball_vel.Y+offsetAdder.Y*120,ball_vel.Z));
-				}
-				
+			int yVel = 0;
+			if (cvarManager->getCvar("obstacle_moving").getBoolValue() && maxMovement.Y>0 ) {
+				yVel = offsetAdder.Y*120;
 			}
-			else {//no movement
-				ball.SetVelocity(Vector(ball_vel.X, -ball_vel.Y*5/6, ball_vel.Z));
-			}
+			ball.SetVelocity(Vector(ball_vel.X, (yVel-(ball_vel.Y-yVel)*k), ball_vel.Z));
+			
 
 		}
 		else if (nearest_face == 1 || nearest_face == 3) {
-			if (cvarManager->getCvar("obstacle_moving").getBoolValue()&&offsetAdder.X!=0) {
-				if (offsetAdder.X * ball_vel.X >= 0) {//they move in the same direction
-					if (abs(offsetAdder.X * 100) >= abs(prevBallPosition.X)) {//wall is faster than ball
-						ball.SetVelocity(Vector(-ball_vel.X + offsetAdder.X *240, ball_vel.Y, ball_vel.Z));
-					}
-					else {//ball is faster than wall
-						ball.SetVelocity(ball_vel + Vector(-offsetAdder.X * 100, 0,0));
-					}
-				}
-				else {//they move in different directions
-					ball.SetVelocity(Vector(-ball_vel.X+offsetAdder.X*120, ball_vel.Y, ball_vel.Z));
-				}
+			int xVel = 0;
+			if (cvarManager->getCvar("obstacle_moving").getBoolValue() && maxMovement.X > 0) {
+				xVel = offsetAdder.X * 120;
 			}
-			else {//no movement
-				ball.SetVelocity(Vector(-ball_vel.X, ball_vel.Y*5/6, ball_vel.Z));
+			ball.SetVelocity(Vector((xVel - (ball_vel.X - xVel) * k), ball_vel.Y,  ball_vel.Z));
+			
+		}
+		else {//top/bottom
+			int zVel = 0;
+			if (cvarManager->getCvar("obstacle_moving").getBoolValue() && maxMovement.Z > 0) {
+				zVel = offsetAdder.Z * 120;
 			}
+			ball.SetVelocity(Vector(ball_vel.X, ball_vel.Y, (zVel - (ball_vel.Z - zVel) * k)));
+			
 		}
-		else if (nearest_face == 4) {//top
-			//TODO: movement 
-			ball.SetVelocity(Vector(prevBallVel.X, prevBallVel.Y, -(prevBallVel.Z)));
-		}
-		else {
-			ball.SetVelocity(Vector(prevBallVel.X, prevBallVel.Y, -prevBallVel.Z));
-		}
+		
 		
 	}
 	prevBallPosition = ball_location;
@@ -278,32 +236,68 @@ void obstaclePlugin::change_z_size(std::string oldvalue, CVarWrapper cvar)
 void obstaclePlugin::change_x_speed(std::string oldvalue, CVarWrapper cvar)
 {
 	offsetAdder.X = cvar.getIntValue();
+	if (maxMovement.X > 0) {
+		wallVelocity.X = offsetAdder.X * 120;
+	}
+	else {
+		wallVelocity.X = 0;
+	}
 }
 
 void obstaclePlugin::change_y_speed(std::string oldvalue, CVarWrapper cvar)
 {
 	offsetAdder.Y = cvar.getIntValue();
+	if (maxMovement.Y > 0) {
+		wallVelocity.Y = offsetAdder.Y * 120;
+	}
+	else {
+		wallVelocity.Y = 0;
+	}
 }
 
 void obstaclePlugin::change_z_speed(std::string oldvalue, CVarWrapper cvar)
 {
 	offsetAdder.Z = cvar.getIntValue();
+	if (maxMovement.Z > 0) {
+		wallVelocity.Z = offsetAdder.Z * 120;
+	}
+	else {
+		wallVelocity.Z = 0;
+	}
 }
 
 
 void obstaclePlugin::change_x_distance(std::string oldvalue, CVarWrapper cvar)
 {
 	maxMovement.X = cvar.getIntValue();
+	if (maxMovement.X > 0) {
+		wallVelocity.X = offsetAdder.X * 120;
+	}
+	else {
+		wallVelocity.X = 0;
+	}
 }
 
 void obstaclePlugin::change_y_distance(std::string oldvalue, CVarWrapper cvar)
 {
 	maxMovement.Y = cvar.getIntValue();
+	if (maxMovement.Y > 0) {
+		wallVelocity.Y = offsetAdder.Y * 120;
+	}
+	else {
+		wallVelocity.Y = 0;
+	}
 }
 
 void obstaclePlugin::change_z_distance(std::string oldvalue, CVarWrapper cvar)
 {
 	maxMovement.Z = cvar.getIntValue();
+	if (maxMovement.Z > 0) {
+		wallVelocity.Z = offsetAdder.Z * 120;
+	}
+	else {
+		wallVelocity.Z = 0;
+	}
 }
 
 void strip(std::string& input)
@@ -339,5 +333,10 @@ void obstaclePlugin::move_obstacle(std::string oldvalue, CVarWrapper cvar)
 	else if (dim == 'z') {
 		Obstacle.setCenter(Obstacle.getCenter() + Vector(0, 0,am));
 	}
+}
+
+void obstaclePlugin::k_changed(std::string oldvalue, CVarWrapper cvar)
+{
+	k = cvar.getFloatValue();
 }
 

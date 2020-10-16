@@ -22,6 +22,11 @@ Obstacle plugin
 5|z moving speed|obstacle_z_speed|0|10
 11|
 8
+9|no bounce
+7|
+4|a lot of bounce|obstacle_bouncyness|0|1
+9|ATTENTION: Setting the Bouncyness too low can cause problems. I recommend 1
+8
 0|place obstacle here|obstacle_place
 7
 0|active|

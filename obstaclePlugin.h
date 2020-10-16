@@ -57,6 +57,9 @@ private:
 	//the obstacle's speed
 	Vector offsetAdder=Vector(0,0,0);
 	Vector maxMovement=Vector(0,0,0);
+	Vector wallVelocity = Vector(0, 0, 0);
+	float k = 1.0;
+	void k_changed(std::string oldvalue, CVarWrapper cvar);
 	
 	
 
